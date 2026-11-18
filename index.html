@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>심해갑 — 제주 심해 갑오징어 홈피싱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#eaf6ff;--neon:#4ff5d2;--hot:#ff5a7e;--gold:#ffd25a;--deep:#03081a}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--deep);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+.disp{font-family:"Black Han Sans","Noto Sans KR",sans-serif;font-weight:400}
+#hud{position:fixed;inset:0;pointer-events:none}
+.chip{position:absolute;background:rgba(3,8,26,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(79,245,210,.22);border-radius:14px;padding:7px 13px;line-height:1.1}
+.chip small{display:block;font-size:10px;letter-spacing:.18em;opacity:.65;font-weight:900}
+.chip b{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:26px}
+#cClock{top:max(12px,env(safe-area-inset-top));left:calc(26% + 14px)}#cClock b{color:var(--gold)}
+#cCatch{top:max(12px,env(safe-area-inset-top));right:14px;text-align:right}#cCatch b{color:var(--neon)}
+#status{position:absolute;left:calc(26% + 14px);bottom:max(70px,calc(env(safe-area-inset-bottom) + 62px));font-size:12.5px;font-weight:700;line-height:1.7;background:rgba(3,8,26,.55);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 12px;min-width:190px}
+#status .r{display:flex;justify-content:space-between;gap:14px}
+#status .r span:first-child{opacity:.6}
+#status .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:900}
+#stay{margin-top:4px;height:6px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+#stay i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4ff5d2,#ffd25a)}
+#gauge{position:absolute;left:calc(26% + 16px);top:13%;width:20px;height:38vh;border-radius:11px;background:rgba(3,8,26,.6);border:1px solid rgba(255,255,255,.15);overflow:hidden;display:none}
+#gauge .zone{position:absolute;left:0;right:0;bottom:22%;height:58%;background:rgba(79,245,210,.15);border-top:1px dashed rgba(79,245,210,.6);border-bottom:1px dashed rgba(79,245,210,.6)}
+#gauge .fill{position:absolute;left:3px;right:3px;bottom:3px;border-radius:8px;background:var(--neon)}
+#gLbl{position:absolute;left:calc(26% + 10px);top:calc(13% + 38vh + 6px);font-size:11px;font-weight:900;display:none}
+#big{position:absolute;left:26%;right:0;top:27%;text-align:center;font-family:"Black Han Sans";font-size:clamp(40px,8.5vw,108px);line-height:1;text-shadow:0 0 30px currentColor,0 4px 0 rgba(0,0,0,.4);opacity:0;transform:scale(.85);transition:opacity .15s,transform .15s}
+#big.on{opacity:1;transform:scale(1)}
+#sub{position:absolute;left:26%;right:0;top:calc(27% + clamp(48px,9.5vw,118px));text-align:center;font-weight:900;font-size:clamp(14px,2.4vw,22px);text-shadow:0 2px 8px rgba(0,0,0,.7)}
+#guide{position:absolute;left:63%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(3,8,26,.75);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:10px 22px;font-weight:900;font-size:clamp(13px,2.1vw,19px);white-space:nowrap;max-width:72vw;overflow:hidden;text-overflow:ellipsis}
+#guide .k{color:var(--neon)}#guide .w{color:var(--hot)}
+#pip{position:fixed;right:14px;top:max(70px,calc(env(safe-area-inset-top) + 64px));width:min(22vw,190px);aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:2px solid rgba(79,245,210,.5);box-shadow:0 10px 30px rgba(0,0,0,.5);display:none;background:#000}
+#pip canvas{width:100%;height:100%;display:block}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:radial-gradient(ellipse at 50% 20%,rgba(12,52,96,.82),rgba(2,5,16,.95));z-index:5;overflow:auto}
+.ov.on{display:flex}
+.card{width:min(620px,100%);text-align:center}
+.kick{font-size:12px;letter-spacing:.32em;color:var(--gold);font-weight:900}
+.logo{font-family:"Black Han Sans";font-size:clamp(70px,17vw,140px);line-height:.9;margin-top:6px;background:linear-gradient(180deg,#fff 5%,#8ff7ff 45%,#1b8dff 95%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 28px rgba(80,200,255,.35))}
+.tag{margin-top:10px;font-weight:700;opacity:.85}
+.flow{margin:22px auto 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.flow div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 5px;text-align:center}
+.flow b{display:block;font-family:"Black Han Sans";font-weight:400;font-size:17px;color:#bff6ff}
+.flow em{display:block;font-style:normal;font-size:10.5px;opacity:.7;margin-top:4px;line-height:1.4}
+.btn{pointer-events:auto;display:block;width:100%;border:0;border-radius:16px;padding:16px;font:900 17px "Noto Sans KR",sans-serif;cursor:pointer;margin-top:10px;color:#03141a;background:linear-gradient(180deg,#86ffe6,var(--neon));box-shadow:0 8px 24px rgba(79,245,210,.3)}
+.btn.ghost{background:rgba(255,255,255,.07);color:var(--ink);box-shadow:none;border:1px solid rgba(255,255,255,.18)}
+.note{margin-top:12px;font-size:12px;opacity:.62;line-height:1.65}
+#calBox{position:relative;width:min(560px,100%);aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2px solid var(--neon);margin:12px auto 0;background:#000}
+#calBox canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.sws{display:flex;gap:10px;justify-content:center;margin-top:12px;align-items:center;font-size:12px;font-weight:700;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff3;cursor:pointer}
+#picked{width:30px;height:30px;border-radius:8px;border:2px solid #fff;display:inline-block}
+#calStatus{margin-top:10px;font-weight:900;min-height:22px}
+.rs{font-family:"Black Han Sans";font-size:clamp(64px,15vw,120px);line-height:1;color:var(--neon);text-shadow:0 0 30px rgba(79,245,210,.5)}
+.rs small{font-size:.4em}
+.rank{display:inline-block;font-family:"Black Han Sans";font-size:60px;width:92px;height:92px;line-height:92px;border-radius:24px;margin:8px 0 6px;background:linear-gradient(135deg,var(--gold),#ff8a3d);color:#2a1300}
+.list{margin:12px 0 4px;display:flex;flex-direction:column;gap:6px;max-height:28vh;overflow:auto}
+.list div{display:flex;justify-content:space-between;background:rgba(255,255,255,.05);border-radius:10px;padding:8px 14px;font-weight:700;font-size:14px}
+.list div b{color:var(--gold)}
+.stats{display:flex;gap:8px;justify-content:center;margin-top:6px;font-size:12.5px;font-weight:700;opacity:.8;flex-wrap:wrap}
+.yt{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border-radius:16px;padding:15px;margin-top:10px;font:900 17px "Noto Sans KR",sans-serif;color:#fff;text-decoration:none;background:linear-gradient(180deg,#ff3b3b,#d90000);box-shadow:0 8px 24px rgba(255,0,0,.28)}
+.yt svg{width:26px;height:18px;flex:none}
+.yt small{display:block;font-size:11px;font-weight:700;opacity:.85}
+.ytline{margin-top:14px;font-size:13px;font-weight:700;opacity:.85}
+.ytline a{color:#ff6b6b;text-decoration:none;font-weight:900}
+#toast{position:fixed;right:14px;bottom:max(70px,calc(env(safe-area-inset-bottom) + 62px));display:flex;align-items:center;gap:10px;background:rgba(10,10,16,.85);border:1px solid rgba(255,80,80,.5);border-radius:14px;padding:10px 14px;color:#fff;text-decoration:none;font-weight:900;font-size:13px;transform:translateX(130%);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);z-index:4}
+#toast.on{transform:none}
+#toast svg{width:24px;height:17px}
+#wm{position:fixed;left:10px;bottom:max(10px,env(safe-area-inset-bottom));font-size:10.5px;font-weight:900;letter-spacing:.06em;color:rgba(255,255,255,.55);pointer-events:none}
+#wm b{color:#ff5252}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+<div class="chip" id="cClock"><small>제주 · 수심 100m</small><b id="clock">07:00</b></div>
+<div class="chip" id="cCatch"><small>조과</small><b id="catch">0마리</b><div id="kg" style="font-size:12px;font-weight:900;opacity:.8">0.00kg</div></div>
+<div id="status">
+<div class="r"><span>바닥 수심</span><b id="sBottom">-</b></div>
+<div class="r"><span>채비(봉돌)</span><b id="sRig">-</b></div>
+<div class="r"><span>봉돌 상태</span><span class="badge" id="sSinker">-</span></div>
+<div class="r"><span>스테이</span><b id="sStay">0.0초</b></div>
+<div id="stay"><i id="stayBar"></i></div>
+</div>
+<div id="gauge"><div class="zone"></div><div class="fill" id="gFill"></div></div>
+<div id="gLbl">텐션</div>
+<div id="big"></div><div id="sub"></div>
+<div id="guide"></div>
+</div>
+<a id="toast" href="https://www.youtube.com/@%EC%B9%B4%EC%95%A4%ED%94%BC%EC%8B%B1/search?query=%EC%8B%AC%ED%95%B4%EA%B0%91" target="_blank" rel="noopener"><svg viewBox="0 0 28 20"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11 5.5v9l8-4.5z" fill="#e00"/></svg><span>킬로급 실전 영상 보기<br><small style="opacity:.75;font-weight:700">@카앤피싱 심해갑</small></span></a>
+<div id="wm">▶ YouTube <b>@카앤피싱</b></div>
+<div id="pip"><canvas id="pipc" width="160" height="120"></canvas></div>
+<div class="ov on" id="ovTitle"><div class="card">
+<div class="kick">CAR &amp; FISHING TV · HOME FISHING</div>
+<div class="logo">심해갑</div>
+<div class="tag">제주 풍낚시 · 수심 100m · 빈 낚싯대로 하는 심해 갑오징어</div>
+<div class="flow">
+<div><b>투하·착저</b><em>대를 내려 투하<br>착저 후 여유줄 정리</em></div>
+<div><b>액션·스테이</b><em>고패 1~2번 툭툭<br>그리고 꾹 참기</em></div>
+<div><b>입질·챔질</b><em>초릿대가 묵직<br>→ 위로 강하게</em></div>
+<div><b>릴링·랜딩</b><em>텐션 유지 100m<br>먹물 조심, 들어뽑기</em></div>
+</div>
+<a class="yt" href="https://www.youtube.com/channel/UCh_vMi0t8heMjqUz8B8SePA?sub_confirmation=1" target="_blank" rel="noopener"><svg viewBox="0 0 28 20"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11 5.5v9l8-4.5z" fill="#e00"/></svg><span>카앤피싱 구독하기<small>진짜 제주 심해갑 손맛은 채널에서</small></span></a>
+<button class="btn" id="bCam">📷 카메라로 출조 (빈 낚싯대)</button>
+<button class="btn ghost" id="bTouch">👆 손가락·마우스로 출조</button>
+<div class="note">초릿대 끝에 형광 테이프를 감고, 폰을 2~3m 앞에 세워 몸과 대가 보이게 놓으세요.<br>대 높이 = 채비 높이. 실제 낚시처럼 손목과 팔로 대를 움직이면 됩니다.</div>
+</div></div>
+<div class="ov" id="ovCal"><div class="card">
+<div class="disp" style="font-size:30px">초릿대 끝을 탭하세요</div>
+<div class="note" style="margin-top:6px;opacity:.85">화면 속 형광 테이프를 누르면 그 색을 따라갑니다</div>
+<div id="calBox"><canvas id="calc" width="320" height="240"></canvas></div>
+<div class="sws">빠른 선택
+<div class="sw" style="background:#b6ff3b" data-h="80"></div>
+<div class="sw" style="background:#ff3fa4" data-h="325"></div>
+<div class="sw" style="background:#ff7a1a" data-h="22"></div>
+<div class="sw" style="background:#2fd0ff" data-h="195"></div>
+&nbsp;선택 <span id="picked"></span>
+</div>
+<div id="calStatus">아직 색을 고르지 않았어요</div>
+<button class="btn" id="bGo" disabled style="opacity:.4">추적 OK — 출항</button>
+<button class="btn ghost" id="bBack">처음으로</button>
+</div></div>
+<div class="ov" id="ovRes"><div class="card">
+<div class="kick">15:00 철수 · 오늘의 조과</div>
+<div class="rs" id="rKg">0<small>kg</small></div>
+<div class="rank" id="rRank">S</div>
+<div class="tag" id="rMsg"></div>
+<div class="stats" id="rStats"></div>
+<div class="list" id="rList"></div>
+<a class="yt" id="rYt" href="https://www.youtube.com/channel/UCh_vMi0t8heMjqUz8B8SePA?sub_confirmation=1" target="_blank" rel="noopener"><svg viewBox="0 0 28 20"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11 5.5v9l8-4.5z" fill="#e00"/></svg><span id="rYtT">카앤피싱 구독하기</span></a>
+<button class="btn" id="bAgain">▶ 다시 출조</button>
+<button class="btn ghost" id="bShot">📸 조과 인증 이미지 만들기</button>
+<div id="shotWrap" style="display:none;margin-top:10px"><img id="shotImg" style="width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.2)"><div class="note">이미지를 길게 누르거나 우클릭해서 저장 → 인스타·카톡에 공유</div></div>
+<button class="btn ghost" id="bHome">처음으로</button>
+<div class="ytline">실제 심해갑 영상 👉 <a href="https://www.youtube.com/@%EC%B9%B4%EC%95%A4%ED%94%BC%EC%8B%B1/search?query=%EC%8B%AC%ED%95%B4%EA%B0%91" target="_blank" rel="noopener">유튜브 @카앤피싱</a></div>
+</div></div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const cv=$('game'),cx=cv.getContext('2d');
+let W=0,H=0;
+function resize(){const d=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',resize);resize();
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,R=Math.random;
+/* ====== 오디오 ====== */
+let ac=null;
+function audio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==='suspended')ac.resume()}
+function tone(f,d,type='sine',v=.2,slide=0,delay=0){if(!ac)return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02)}
+function noise(d,v=.25,f=900,q=0){if(!ac)return;const n=Math.floor(ac.sampleRate*d),b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=(R()*2-1)*(1-i/n);const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();fl.type=q?'bandpass':'lowpass';fl.frequency.value=f;if(q)fl.Q.value=q;g.gain.value=v;s.buffer=b;s.connect(fl).connect(g).connect(ac.destination);s.start()}
+const S={
+drop(){noise(1.2,.12,3000,2)},cast(){noise(.4,.2,2500);tone(800,.3,'sine',.07,-500)},
+touch(){tone(160,.08,'triangle',.25)},action(){noise(.12,.12,1800,3)},
+bite(){tone(70,.35,'sine',.35);tone(140,.25,'triangle',.06,0,.05)},
+hook(){tone(260,.16,'sawtooth',.2,520);noise(.15,.2,3000)},
+click(){tone(2400,.015,'square',.03)},jet(){tone(180,.35,'sawtooth',.07,-60);noise(.3,.08,600)},
+ink(){noise(.5,.3,1400,1.5)},land(){[523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.18,0,i*.09))},
+lose(){tone(380,.5,'sawtooth',.14,-280)},snag(){tone(110,.6,'sawtooth',.2,-40);noise(.3,.3,400)},ok(){tone(880,.08,'triangle',.12);tone(1320,.1,'triangle',.12,0,.08)}
+};
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+/* ====== 입력: 카메라 색 추적 / 포인터 ====== */
+const tip={x:.6,y:.6,ok:false,mode:null};
+const hist=[];let video=null,target=null,rawPos=null,lostN=0;
+const pc=document.createElement('canvas');pc.width=160;pc.height=120;const pctx=pc.getContext('2d',{willReadFrequently:true});
+const pipx=$('pipc').getContext('2d'),calc=$('calc'),calx=calc.getContext('2d');
+function hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,mx?d/mx:0,mx]}
+const hd=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
+async function startCam(){
+try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
+video=document.createElement('video');video.playsInline=true;video.muted=true;video.srcObject=s;await video.play();return true}
+catch(e){$('calStatus').textContent='카메라를 열 수 없어요. 권한을 허용하거나 https 주소로 열어 주세요. ('+(e.name||e)+')';return false}
+}
+function track(){
+if(!video||video.readyState<2)return;
+pctx.save();pctx.translate(160,0);pctx.scale(-1,1);pctx.drawImage(video,0,0,160,120);pctx.restore();
+if(!target){tip.ok=false;return}
+const d=pctx.getImageData(0,0,160,120).data;let sx=0,sy=0,n=0;const tol=target.s<.35?30:20;
+for(let i=0,p=0;i<d.length;i+=4,p++){const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);if(mx<60||mx-mn<45)continue;
+const [h,s,v]=hsv(r,g,b);if(hd(h,target.h)<tol&&s>Math.max(.3,target.s*.55)&&v>Math.max(.25,target.v*.45)){sx+=p%160;sy+=(p/160)|0;n++}}
+if(n>=4){const nx=sx/n/160,ny=sy/n/120;rawPos={x:nx,y:ny};if(!tip.ok){tip.x=nx;tip.y=ny}tip.x+=(nx-tip.x)*.6;tip.y+=(ny-tip.y)*.6;tip.ok=true;lostN=0}
+else{rawPos=null;if(++lostN>12)tip.ok=false}
+}
+function preview(c,w,h){if(!video)return;c.drawImage(pc,0,0,w,h);if(rawPos){c.strokeStyle='#4ff5d2';c.lineWidth=Math.max(2,w/80);c.beginPath();c.arc(rawPos.x*w,rawPos.y*h,w/14,0,7);c.stroke()}}
+calc.addEventListener('pointerdown',e=>{const r=calc.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*160),y=Math.floor((e.clientY-r.top)/r.height*120);
+const d=pctx.getImageData(clamp(x-2,0,155),clamp(y-2,0,115),5,5).data;let A=0,B=0,C=0;for(let i=0;i<d.length;i+=4){A+=d[i];B+=d[i+1];C+=d[i+2]}A/=25;B/=25;C/=25;
+const [h,s,v]=hsv(A,B,C);if(s<.25){$('calStatus').textContent='색이 너무 흐려요. 형광 테이프를 정확히 눌러 주세요.';return}
+target={h,s,v};$('picked').style.background=`rgb(${A|0},${B|0},${C|0})`});
+document.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{target={h:+s.dataset.h,s:.6,v:.6};$('picked').style.background=s.style.background});
+cv.addEventListener('pointermove',e=>{if(tip.mode==='touch'){tip.x=e.clientX/W;tip.y=e.clientY/H;tip.ok=true}});
+cv.addEventListener('pointerdown',e=>{if(tip.mode==='touch'){tip.x=e.clientX/W;tip.y=e.clientY/H;tip.ok=true}});
+/* ====== 동작 해석 ====== */
+let T=0;
+const recent=s=>hist.filter(h=>T-h.t<=s);
+function vel(){const r=recent(.15);if(r.length<2)return{vx:0,vy:0};const a=r[0],b=r[r.length-1],dt=(b.t-a.t)||1e-3;return{vx:(b.x-a.x)/dt,vy:(b.y-a.y)/dt}}
+function riseFromLow(s){let m=-1;for(const h of recent(s))m=Math.max(m,h.y);return m<0?0:m-tip.y}
+function dropFromHigh(s){let m=2;for(const h of recent(s))m=Math.min(m,h.y);return m>1.5?0:tip.y-m}
+const wasHigh=(s,th)=>recent(s).some(h=>h.y<th);
+const liftM=()=>clamp((.62-tip.y)*3.4,-.7,2.2); // 대 높이 → 채비 들림(m)
+/* ====== 지형 (풍 드리프트) ====== */
+const rocky=p=>Math.sin(p*.018+2)>.5;
+function bottomAt(p){let d=100+3.6*Math.sin(p*.045)+1.9*Math.sin(p*.11+1);if(rocky(p))d-=.9*Math.abs(Math.sin(p*.9))+.7*Math.abs(Math.sin(p*2.3+.5))+.5;return d}
+/* ====== 게임 상태 ====== */
+const G={run:false,state:'idle',clock:0,catches:[],stats:{bite:0,miss:0,lost:0,snag:0},drift:0};
+let st={},msgT=0,inkT=0,inks=[],shake=0;
+const DAY=180; // 실제 3분 = 07:00~15:00
+function big(t,c='#fff',s='',d=1.3){const b=$('big');b.textContent=t;b.style.color=c;b.classList.add('on');$('sub').textContent=s;msgT=d}
+function guide(h){if($('guide').innerHTML!==h)$('guide').innerHTML=h}
+function setState(s,o={}){G.state=s;st=Object.assign({t:0},o);enter(s)}
+const R0={lineL:0,rigD:0,egiJ:0,egiX:0,sq:null,attract:0,stay:0,acts:[],slack:false,offT:0,overT:0,lowT:0,highT:0,cast:1,actCd:0};
+let rig={...R0};
+function enter(s){
+$('gauge').style.display=s==='reel'?'block':'none';$('gLbl').style.display=s==='reel'?'block':'none';
+if(s==='ready'){rig={...R0};guide('대를 <span class="k">앞으로 내려</span> 채비 투하 · 머리 위에서 <span class="k">휙</span> 던지면 선진입 쪽 캐스팅')}
+if(s==='sink'){S.drop();guide('채비 내려가는 중… 봉돌이 바닥에 닿으면 <span class="k">톡</span> 하고 줄이 늘어집니다')}
+if(s==='landed'){S.touch();buzz(30);big('착저','#bff6ff','대를 살짝 들어 여유줄 정리!',1.1);guide('<span class="k">대를 살짝 들어</span> 여유줄 정리')}
+if(s==='fish'){guide('<span class="k">고패 1~2번</span> 툭툭 → 대를 멈추고 <span class="k">스테이</span>')}
+if(s==='bite'){G.stats.bite++;S.bite();buzz(40);guide('초릿대가 <span class="k">묵직</span>… 지금 <span class="k">위로 강하게 챔질!</span>')}
+if(s==='reel'){guide('대 각도 유지하며 릴링 · <span class="k">꾹꾹 당기면 대를 살짝 숙여</span> 받아주기')}
+if(s==='surface'){guide('수면 도착!')}
+if(s==='got'){guide('한 마리 추가! 곧 다시 투하합니다')}
+}
+function newSquid(){const kg=+(0.35+Math.pow(R(),1.7)*2.1).toFixed(2);return{kg,x:(R()<.5?-1:1)*(2.4+R()*1.2),y:0,phase:'approach',interest:.2+R()*.2,hue:R(),flash:0,face:1}}
+function startGame(){
+G.clock=0;G.catches=[];G.stats={bite:0,miss:0,lost:0,snag:0};G.drift=R()*400;hist.length=0;inks=[];
+['ovTitle','ovCal','ovRes'].forEach(i=>$(i).classList.remove('on'));
+$('pip').style.display=tip.mode==='cam'?'block':'none';
+big('출항','#8ff7ff','07:00 · 풍 펴고 포인트 진입',1.6);setState('ready');G.run=true;
+}
+function endGame(){
+G.run=false;setState('idle');guide('');$('gauge').style.display='none';
+const kg=G.catches.reduce((a,c)=>a+c.kg,0);$('rKg').innerHTML=kg.toFixed(2)+'<small>kg</small>';
+const rk=kg>=6?'S':kg>=3.5?'A':kg>=1.5?'B':'C';$('rRank').textContent=rk;
+$('rMsg').textContent={S:'쿨러 만선! 선장님이 포인트 물어봅니다',A:'킬로급 손맛 제대로 봤습니다',B:'손맛은 봤다! 다음 물때 다시',C:'몰황… 자리 탓 아닙니다, 스테이를 길게'}[rk];
+$('rYtT').innerHTML={S:'진짜 바다에서 붙어볼래요? <b>카앤피싱 구독</b>',A:'실전 킬로급 손맛 보러 <b>카앤피싱 구독</b>',B:'다음 출조 영상 받아보기 <b>카앤피싱 구독</b>',C:'몰황 탈출 팁은 <b>카앤피싱</b>에서'}[rk];$('shotWrap').style.display='none';G.rank=rk;G.kgTotal=kg;
+$('rStats').innerHTML=`<span>입질 ${G.stats.bite}</span>·<span>헛챔질 ${G.stats.miss}</span>·<span>빠짐 ${G.stats.lost}</span>·<span>밑걸림 ${G.stats.snag}</span>`;
+$('rList').innerHTML=G.catches.length?G.catches.map((c,i)=>`<div><span>🦑 ${i+1}마리 · ${c.grade}</span><b>${c.kg.toFixed(2)}kg${c.kg>=1?' 킬로급':''}</b></div>`).join(''):'<div><span>조과 없음</span><b>0kg</b></div>';
+$('ovRes').classList.add('on');S.land();
+}
+/* ====== 업데이트 ====== */
+function update(dt){
+st.t+=dt;G.clock+=dt;G.drift+=dt*.9;
+if(G.clock>=DAY&&!['reel','surface','net'].includes(G.state)){endGame();return}
+const {vy,vx}=vel(),B=bottomAt(G.drift),sp=Math.hypot(vx,vy);
+switch(G.state){
+case 'ready':
+if(!tip.ok)break;
+if(wasHigh(1.2,.38)&&tip.y>.55&&vy>1.3){rig.cast=1.35;S.cast();big('캐스팅!','#ffd25a','선진입 쪽에 채비 안착 — 새 바닥을 먼저 긁는다',1.4);setState('sink',{d:0})}
+else if(tip.y>.74&&st.t>.5){rig.cast=1;setState('sink',{d:0})}
+break;
+case 'sink':
+st.d+=dt*24;rig.rigD=st.d;
+if(st.d>=B){rig.rigD=B;rig.lineL=B+liftM()+.6;setState('landed')}
+break;
+case 'landed':
+if(riseFromLow(.6)>.07||vy<-.5){rig.lineL=B+liftM()+.02;rig.slack=false;S.ok();setState('fish')}
+else if(st.t>2.6){rig.slack=true;big('줄 늘어짐','#ff5a7e','여유줄이 남아 밑걸림 위험 ↑',1.2);setState('fish')}
+break;
+case 'fish': case 'bite':{
+rig.rigD=rig.lineL-liftM();const gap=B-rig.rigD; // + 뜸 / - 봉돌 눕고 줄 늘어짐
+rig.actCd-=dt;
+// 액션(고패) 감지
+if(G.state==='fish'&&rig.actCd<=0&&riseFromLow(.5)>.15&&vy<-.9){rig.actCd=.45;rig.egiJ=1;rig.egiX=(R()-.5)*.6;S.action();rig.stay=0;
+rig.acts=rig.acts.filter(t=>T-t<5);rig.acts.push(T);
+const n=rig.acts.length;rig.attract=clamp(rig.attract+(n<=2?.32:n===3?.08:-.25),0,1.2);
+if(n>=4)big('과한 액션','#ff5a7e','고패 1~2번이면 충분. 이제 스테이!',1);
+if(rig.sq&&n>=3)rig.sq.interest-=.25;}
+// 스테이
+if(sp<.3)rig.stay+=dt;else if(sp>.8)rig.stay=Math.max(0,rig.stay-dt*3);
+rig.attract=Math.max(0,rig.attract-dt*.04);
+// 바닥 관리
+rig.offT=gap>1.6?rig.offT+dt:0;rig.overT=gap<-.9?rig.overT+dt:0;
+rig.lowT=tip.y>.82?rig.lowT+dt:0;rig.highT=tip.y<.3?rig.highT+dt:0;
+if(rig.offT>1.2&&rig.lowT>.4){rig.lineL=B+liftM()+.02;rig.offT=0;rig.slack=false;S.touch();big('바닥 재확인','#bff6ff','봉돌 착저 ✓',.9)}
+if(rig.overT>.8&&rig.highT>.4){rig.lineL-=1.6;rig.overT=0;S.ok();big('릴 감아 올림','#bff6ff','줄 정리 ✓',.9)}
+if(gap<-.25&&!rig.wasDown){rig.wasDown=true;S.touch()}if(gap>.1)rig.wasDown=false;
+// 밑걸림
+const slackM=Math.max(0,-gap);
+if(slackM>.35&&G.state==='fish'){const p=(slackM-.3)*.09+(rocky(G.drift)?.1:0)+(rig.slack?.05:0);if(R()<p*dt){G.stats.snag++;S.snag();buzz(250);shake=.5;big('밑걸림!','#ff5a7e','채비 터트리고 다시 묶는 중… (20분 손해)',2);G.clock+=7;setState('snag');break}}
+const egiH=gap+.5; // 에기 높이(바닥 위)
+const inZone=egiH>.05&&egiH<1.7;
+// 갑오징어 AI
+if(G.state==='fish'){
+if(!rig.sq&&inZone){const p=(.05+rig.attract*.22+(rocky(G.drift)?.06:0))*rig.cast;if(R()<p*dt)rig.sq=newSquid()}
+const q=rig.sq;
+if(q){q.flash+=dt;
+const still=sp<.3;
+q.interest+= (still?.32*dt*(1+Math.min(rig.stay,3)*.3):(sp>1?-.35*dt:0)) + (inZone?0:-.2*dt);
+const dist=Math.abs(q.x);
+const tx=q.face*-.25;q.x=lerp(q.x,dist>.6?q.x*.985:q.x,1);
+if(q.interest>.35)q.x+= (-Math.sign(q.x))*Math.min(dist,(.25+q.interest*.35)*dt);
+else q.x+=Math.sign(q.x)*.2*dt;
+q.face=q.x>0?-1:1;
+if(q.interest<-.1||dist>4.5){rig.sq=null}
+else if(dist<.32&&q.interest>.9&&rig.stay>.8&&inZone){setState('bite',{load:0,peak:0})}
+}
+}else{ // bite
+st.load=Math.min(1,st.load+dt*1.4);
+const up=-vy;st.peak=Math.max(st.peak,up);
+if(vy<-1.5&&riseFromLow(.35)>.16){
+const g=up>3.2?'PERFECT':up>2.1?'GOOD':'다리걸림';
+S.hook();buzz(120);shake=.3;
+big(g==='PERFECT'?'PERFECT 챔질':g==='GOOD'?'GOOD 챔질':'후킹… 다리만?',g==='PERFECT'?'#4ff5d2':g==='GOOD'?'#ffd25a':'#ffb08a',g==='다리걸림'?'챔질이 약했다 — 살살 감아야 산다':'묵직! 몸통에 정확히 박혔다',1.3);
+setState('reel',{sq:rig.sq,depth:rig.rigD,grade:g,ten:55,jet:0,jetT:1.2+R(),absorbed:false,slackT:0,tear:0,click:0});break}
+if(vy<-.45&&vy>-1.5&&st.t>.2&&R()<dt*2.2){G.stats.miss++;S.lose();big('눈치챘다','#ff5a7e','어설프게 들면 에기를 놓는다. 챔질은 강하게!',1.3);rig.sq=null;rig.stay=0;setState('fish');break}
+if(st.t>2.6){G.stats.miss++;S.lose();big('뱉었다…','#ff5a7e','묵직하면 바로 챔질!',1.2);rig.sq=null;rig.stay=0;rig.attract*=.5;setState('fish')}
+}
+if(rig.egiJ>0)rig.egiJ=Math.max(0,rig.egiJ-dt*1.6);
+break;}
+case 'snag':
+if(st.t>2.2)setState('ready');break;
+case 'reel':{
+const q=st.sq;st.jetT-=dt;
+const inArc=tip.y>.28&&tip.y<.78;
+const rate=inArc?(st.grade==='다리걸림'?6.5:8.5):2.5;
+st.depth-=rate*dt;st.click+=dt;if(st.click>.07&&inArc){st.click=0;S.click()}
+if(st.jetT<=0&&st.jet<=0){st.jet=.6;st.jetT=1.3+R()*1.6;st.absorbed=false;st.jy=tip.y;S.jet();buzz([40,30,40])}
+if(st.jet>0){st.jet-=dt;if(tip.y-st.jy>.06)st.absorbed=true;st.ten+=(st.absorbed?-10:58)*dt;st.depth+=2.5*dt}
+else{const tgt=tip.y>.82?4:55;st.ten+=(tgt-st.ten)*Math.min(1,dt*(tip.y>.82?1.2:1.8))}
+if(vy>1.4)st.ten-=60*dt; // 펌핑하듯 대를 확 내리면 줄이 늘어짐
+st.ten=clamp(st.ten,0,110);
+if(st.ten>86)st.tear+=dt*(st.grade==='다리걸림'?1.7:st.grade==='GOOD'?1.1:.8);else st.tear=Math.max(0,st.tear-dt*.3);
+st.slackT=st.ten<16?st.slackT+dt:0;
+if(st.tear>1){G.stats.lost++;S.lose();big('다리만 올라왔다','#ff5a7e','꾹꾹 당길 때 대로 받아줘야 안 찢어진다',1.7);setState('ready');break}
+if(st.slackT>1.1){G.stats.lost++;S.lose();big('빠졌다…','#ff5a7e','에기엔 미늘이 없다 — 텐션이 풀리면 끝',1.7);setState('ready');break}
+if(st.depth<=3){setState('surface',{sq:q,grade:st.grade})}
+break;}
+case 'surface':
+if(st.t<.05){if(R()<.7){S.ink();shake=.4;inks=Array.from({length:7},()=>({x:.3+R()*.65,y:.15+R()*.6,r:40+R()*90,a:1}));big('먹물 발사!','#9aa3c0','',1.1)}}
+if(st.t>1.2)setState(st.sq.kg>=1.3?'net':'lift',{sq:st.sq,grade:st.grade,hold:0});
+break;
+case 'net':
+guide('<span class="k">킬로급!</span> 뜰채 들어올 때까지 <span class="k">대를 높게 고정</span>');
+if(tip.y<.5&&Math.abs(vel().vy)<.5)st.hold+=dt;else st.hold=Math.max(0,st.hold-dt);
+if(st.hold>1.3)catchIt();
+else if(st.t>6){G.stats.lost++;S.lose();big('수면에서 털렸다','#ff5a7e','큰 놈은 뜰채 전까지 대를 들고 버텨야',1.5);setState('ready')}
+break;
+case 'lift':
+guide('<span class="k">천천히 쭉</span> 들어뽑기 · 확 채면 털립니다');
+if(vy<-2.6){G.stats.lost++;S.lose();big('털렸다!','#ff5a7e','들어뽑기는 부드럽게',1.4);setState('ready');break}
+if(tip.y<.3&&st.t>.3)catchIt();
+else if(st.t>6){G.stats.lost++;S.lose();big('빠졌다…','#ff5a7e','수면에서 오래 끌면 털린다',1.4);setState('ready')}
+break;
+case 'got':
+if(st.t>2.4)setState('ready');break;
+}
+if(G.state!=='fish'&&G.state!=='bite'){rig.stay=0}
+}
+function catchIt(){const q=st.sq;G.catches.push({kg:q.kg,grade:st.grade});S.land();buzz([50,50,160]);
+if(q.kg>=1){const t=$('toast');t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),4500)}
+big(`🦑 ${q.kg.toFixed(2)}kg`,'#ffd25a',q.kg>=1?'킬로급 심해갑!':'갑오징어 한 마리 추가',2.2);setState('got',{sq:q})}
+/* ====== HUD ====== */
+function hud(){
+const m=420+Math.min(G.clock,DAY)/DAY*480;$('clock').textContent=String((m/60|0)).padStart(2,'0')+':'+String((m%60)|0).padStart(2,'0');
+$('catch').textContent=G.catches.length+'마리';$('kg').textContent=G.catches.reduce((a,c)=>a+c.kg,0).toFixed(2)+'kg';
+const B=bottomAt(G.drift),s=G.state;$('sBottom').textContent=B.toFixed(1)+'m'+(rocky(G.drift)?' · 암반':' · 모래');
+const rd=s==='reel'?st.depth:s==='sink'?st.d:rig.rigD||0;$('sRig').textContent=(s==='ready'||s==='idle')?'-':rd.toFixed(1)+'m';
+const sb=$('sSinker');
+if(s==='fish'||s==='bite'){const gap=B-rig.rigD;
+if(gap>1.6){sb.textContent='바닥에서 '+gap.toFixed(1)+'m 뜸';sb.style.background='#ff5a7e';sb.style.color='#fff';guideOnce('바닥에서 떴다! <span class="w">대를 끝까지 내려</span> 바닥 재확인')}
+else if(gap<-.9){sb.textContent='줄 늘어짐 '+(-gap).toFixed(1)+'m';sb.style.background='#ff8a3d';sb.style.color='#2a1300';guideOnce('바닥이 올라왔다! <span class="w">대를 들어</span> 릴 감기')}
+else if(gap<-.25){sb.textContent='봉돌 눕힘';sb.style.background='#ffd25a';sb.style.color='#2a1300'}
+else if(gap<=.35){sb.textContent='착저 ✓ 텐션';sb.style.background='#4ff5d2';sb.style.color='#03141a';if(s==='fish')guide(rig.stay>1?'스테이… <span class="k">대를 멈추고</span> 기다리기':'<span class="k">고패 1~2번</span> 툭툭 → 대를 멈추고 <span class="k">스테이</span>')}
+else{sb.textContent=gap.toFixed(1)+'m 띄움';sb.style.background='rgba(255,255,255,.15)';sb.style.color='#fff'}
+}else{sb.textContent=s==='reel'?'릴링 중':s==='sink'?'하강 중':'-';sb.style.background='rgba(255,255,255,.12)';sb.style.color='#fff'}
+$('sStay').textContent=rig.stay.toFixed(1)+'초';$('stayBar').style.width=Math.min(100,rig.stay/4*100)+'%';
+if(s==='reel'){const t=clamp(st.ten,0,100),f=$('gFill');f.style.height=`calc(${t}% - 6px)`;f.style.background=t>86?'#ff5a7e':t<16?'#7f8aa8':'#4ff5d2';$('gLbl').style.color=f.style.background}
+if(tip.mode==='cam'&&!tip.ok&&G.run)guide('⚠️ 초릿대 끝이 안 보여요 — 카메라 앞으로');
+}
+function guideOnce(h){guide(h)}
+/* ====== 렌더 ====== */
+const snow=Array.from({length:90},()=>({x:R(),y:R(),s:R()*1.6+.4,v:R()*.3+.1}));
+const MX=()=>W*.26;
+function waterCol(d){const t=clamp(d/110,0,1);return[lerp(40,4,t),lerp(150,18,t),lerp(200,52,t)]}
+function rgb(c,a=1){return`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`}
+let camD=40;
+function render(dt){
+const X0=MX(),CW=W-X0;
+cx.save();if(shake>0){shake-=dt;cx.translate((R()-.5)*14*shake,(R()-.5)*14*shake)}
+const s=G.state,B=bottomAt(G.drift);
+// 카메라 초점 수심
+let focus=20;
+if(s==='sink')focus=st.d;else if(['landed','fish','bite','snag'].includes(s))focus=B-2.2;
+else if(s==='reel')focus=st.depth;else if(['surface','net','lift','got'].includes(s))focus=2;else focus=4;
+camD=lerp(camD,focus,Math.min(1,dt*(s==='sink'||s==='reel'?6:2.5)));
+const ppm=H/7,top=camD-3.5;const yOf=d=>(d-top)*ppm;
+// 물 배경
+const c1=waterCol(top),c2=waterCol(top+7);let g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,rgb(c1));g.addColorStop(1,rgb(c2));cx.fillStyle=g;cx.fillRect(X0,0,CW,H);
+// 수면 근처면 하늘/빛
+if(top<0){const sy=yOf(0);let sg=cx.createLinearGradient(0,0,0,sy);sg.addColorStop(0,'#7cc8ff');sg.addColorStop(1,'#cfeeff');cx.fillStyle=sg;cx.fillRect(X0,0,CW,sy);
+// 한라산 실루엣
+cx.fillStyle='rgba(60,110,150,.55)';cx.beginPath();cx.moveTo(X0,sy);for(let i=0;i<=40;i++){const x=X0+CW*i/40,h=Math.exp(-Math.pow((i-26)/9,2))*sy*.42+Math.sin(i*.9)*3+6;cx.lineTo(x,sy-h)}cx.lineTo(W,sy);cx.fill();
+cx.fillStyle='rgba(255,255,255,.65)';cx.fillRect(X0,sy-2,CW,3)}
+// 빛줄기 (얕을수록 강함)
+const la=clamp(.12-top/600,0,.12);if(la>0){cx.save();cx.globalAlpha=la;cx.fillStyle='#d6f6ff';for(let i=0;i<6;i++){const x0=X0+CW*(.05+i*.17)+Math.sin(T*.4+i)*25;cx.beginPath();cx.moveTo(x0,Math.max(0,yOf(0)));cx.lineTo(x0+30,Math.max(0,yOf(0)));cx.lineTo(x0+150,H);cx.lineTo(x0+70,H);cx.fill()}cx.restore()}
+// 마린스노우 (드리프트로 흐름)
+for(const p of snow){p.x-=dt*.03*p.v*(s==='sink'||s==='reel'?0:1);p.y-=(s==='sink'?-dt*.6:s==='reel'?dt*.5:dt*.01)*p.v;if(p.x<0)p.x+=1;if(p.y<0)p.y+=1;if(p.y>1)p.y-=1;
+cx.fillStyle=`rgba(220,240,255,${.15+p.v*.4})`;cx.fillRect(X0+p.x*CW,p.y*H,p.s,p.s)}
+// 바닥 지형
+const rx=X0+CW*.42; // 채비 화면 x
+const wx=x=>G.drift+(x-rx)/ppm;
+if(yOf(B+4)>0&&yOf(B-4)<H){
+cx.beginPath();cx.moveTo(X0,H);for(let x=X0;x<=W+6;x+=6)cx.lineTo(x,yOf(bottomAt(wx(x))));cx.lineTo(W,H);cx.closePath();
+let bg=cx.createLinearGradient(0,yOf(B-2),0,yOf(B+3));bg.addColorStop(0,'#3a4a5a');bg.addColorStop(1,'#0a121e');cx.fillStyle=bg;cx.fill();
+// 암반 표시 / 모래 질감
+for(let x=X0;x<=W;x+=14){const p=wx(x),d=bottomAt(p),y=yOf(d);if(rocky(p)){cx.fillStyle='rgba(20,28,40,.9)';cx.beginPath();cx.ellipse(x,y+6,9,7,Math.sin(p)*.5,0,7);cx.fill();
+if(Math.sin(p*3.1)>.6){cx.strokeStyle='rgba(90,160,110,.6)';cx.lineWidth=2;cx.beginPath();cx.moveTo(x,y);cx.quadraticCurveTo(x+Math.sin(T+p)*8,y-20,x+Math.sin(T*1.3+p)*6,y-38);cx.stroke()}}
+else{cx.fillStyle='rgba(200,190,160,.18)';cx.fillRect(x,y+3+Math.sin(p*5)*2,3,2)}}
+cx.strokeStyle='rgba(180,210,230,.25)';cx.lineWidth=1.5;cx.beginPath();for(let x=X0;x<=W;x+=6){const y=yOf(bottomAt(wx(x)));x===X0?cx.moveTo(x,y):cx.lineTo(x,y)}cx.stroke();
+}
+// 채비 (봉돌 + 에기)
+let sinkD=null,egi=null;
+if(s==='sink'){sinkD=st.d}
+else if(['landed','fish','bite'].includes(s)){sinkD=Math.min(rig.rigD,B)}
+if(sinkD!==null){
+const syy=yOf(sinkD);const lying=s!=='sink'&&rig.rigD>B-.02;
+const egiD=(lying?B:sinkD)-.5-rig.egiJ*.7*Math.sin(rig.egiJ*Math.PI);
+const ex=rx+22+rig.egiX*ppm*rig.egiJ+Math.sin(T*1.3)*3;const ey=yOf(egiD);
+// 원줄
+cx.strokeStyle='rgba(240,250,255,.8)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(rx,0);
+if(lying){const sl=Math.min(1.5,rig.rigD-B);cx.quadraticCurveTo(rx+sl*40,syy-20,rx,syy-4)}else cx.lineTo(rx,syy-4);cx.stroke();
+// 가지줄
+const by=yOf(egiD+.08);cx.beginPath();cx.moveTo(rx,by);cx.lineTo(ex-10,ey);cx.stroke();
+// 봉돌
+cx.fillStyle='#8c939c';cx.beginPath();cx.moveTo(rx,syy-8);cx.quadraticCurveTo(rx+9,syy+2,rx,syy+10);cx.quadraticCurveTo(rx-9,syy+2,rx,syy-8);cx.fill();
+if(lying&&s!=='sink'){cx.fillStyle='rgba(200,190,160,.3)';cx.beginPath();cx.ellipse(rx,syy+10,14,3,0,0,7);cx.fill()}
+egi={x:ex,y:ey};drawEgi(ex,ey,rig.egiJ>0?-.5+rig.egiJ*.3:-.15);
+}
+// 갑오징어
+if((s==='fish'||s==='bite')&&rig.sq&&egi){const q=rig.sq;const qx=egi.x+q.x*ppm,qy=egi.y+Math.sin(T*1.5)*6+(s==='bite'?0:-6);drawSquid(qx-(s==='bite'?q.face*26:0),qy,q,q.face,s==='bite')}
+if(s==='reel'){const y=H*.5;// 따라 올라오는 갑오징어
+cx.strokeStyle='rgba(240,250,255,.85)';cx.lineWidth=1.3;cx.beginPath();cx.moveTo(rx,0);cx.lineTo(rx+(st.jet>0?Math.sin(T*30)*6:0),y-30);cx.stroke();
+drawEgi(rx,y-22,-1.5);drawSquid(rx+Math.sin(T*(st.jet>0?9:2))*(st.jet>0?24:6),y+18,st.sq,1,true,true)}
+if(['surface','net','lift'].includes(s)){const y=yOf(0)+30;cx.strokeStyle='#fff';cx.lineWidth=1.3;cx.beginPath();cx.moveTo(rx,0);cx.lineTo(rx,y-20);cx.stroke();drawEgi(rx,y-14,-1.5);drawSquid(rx+Math.sin(T*6)*10,y+24,st.sq,1,true,true)}
+if(s==='got'){const y=H*.42;drawSquid(rx+40,y,st.sq,1,false,false,1.7)}
+// 먹물
+inks=inks.filter(k=>(k.a-=dt*.35)>0);for(const k of inks){let ig=cx.createRadialGradient(X0+k.x*CW,k.y*H,0,X0+k.x*CW,k.y*H,k.r*(1.5-k.a*.5));ig.addColorStop(0,`rgba(8,8,14,${.92*k.a})`);ig.addColorStop(.7,`rgba(12,12,20,${.6*k.a})`);ig.addColorStop(1,'rgba(10,10,20,0)');cx.fillStyle=ig;cx.fillRect(X0,0,CW,H)}
+// 낚싯대 + 초릿대 하중
+drawRod();
+// 입질 비네팅
+if(s==='bite'){cx.strokeStyle=`rgba(255,210,90,${.25+.2*Math.sin(T*8)})`;cx.lineWidth=7;cx.strokeRect(X0+4,4,CW-8,H-8)}
+if(s==='reel'&&st.jet>0){cx.strokeStyle=`rgba(255,90,126,${.35+.3*Math.sin(T*28)})`;cx.lineWidth=7;cx.strokeRect(X0+4,4,CW-8,H-8)}
+cx.restore();
+drawMini(B);
+}
+function drawEgi(x,y,rot){cx.save();cx.translate(x,y);cx.rotate(rot);
+let g=cx.createLinearGradient(-22,0,22,0);g.addColorStop(0,'#ff8a3d');g.addColorStop(.6,'#ff4f8b');g.addColorStop(1,'#ffd25a');
+cx.fillStyle=g;cx.beginPath();cx.ellipse(0,0,22,6.5,0,0,7);cx.fill();
+cx.strokeStyle='rgba(255,255,255,.55)';cx.lineWidth=1.2;for(let i=-12;i<=8;i+=5){cx.beginPath();cx.moveTo(i,-5);cx.lineTo(i+3,5);cx.stroke()}
+cx.fillStyle='#fff';cx.beginPath();cx.arc(-15,-1.5,2.2,0,7);cx.fill();cx.fillStyle='#000';cx.beginPath();cx.arc(-15,-1.5,1.1,0,7);cx.fill();
+cx.strokeStyle='#c9d2dc';cx.lineWidth=1;for(let a=-3;a<=3;a++){cx.beginPath();cx.moveTo(22,0);cx.lineTo(30,a*2.2);cx.stroke()}
+cx.fillStyle='rgba(255,120,150,.5)';cx.beginPath();cx.moveTo(-6,-5);cx.lineTo(-12,-11);cx.lineTo(-2,-6);cx.fill();cx.beginPath();cx.moveTo(-6,5);cx.lineTo(-12,11);cx.lineTo(-2,6);cx.fill();
+cx.restore()}
+function drawSquid(x,y,q,face,grab,hooked,scale=1){
+cx.save();cx.translate(x,y);cx.scale(face*scale*1.1,scale*1.1);if(hooked)cx.rotate(-1.35);
+const fl=(q.flash||T);
+// 지느러미 물결
+cx.fillStyle='rgba(190,175,150,.55)';cx.beginPath();
+for(let i=0;i<=20;i++){const a=Math.PI*i/20,rx=34+Math.sin(T*9+i*1.1)*2.4;cx.lineTo(Math.cos(a)*rx-2,-Math.sin(a)*15-1)}
+for(let i=0;i<=20;i++){const a=Math.PI*i/20,rx=34+Math.sin(T*9+i*1.1+2)*2.4;cx.lineTo(-Math.cos(a)*rx-2,Math.sin(a)*15+1)}cx.fill();
+// 몸통
+let g=cx.createLinearGradient(0,-14,0,14);g.addColorStop(0,'#8a7457');g.addColorStop(.5,'#c7b08a');g.addColorStop(1,'#e8dcc4');cx.fillStyle=g;cx.beginPath();cx.ellipse(0,0,30,12.5,0,0,7);cx.fill();
+// 지브라 무늬 (사냥 시 깜빡임)
+const zb=grab||hooked?.85:.35+.3*Math.sin(fl*6);cx.strokeStyle=`rgba(40,28,20,${zb})`;cx.lineWidth=2.2;
+for(let i=-22;i<=22;i+=6){const o=Math.sin(fl*8+i*.4)*2;cx.beginPath();cx.moveTo(i+o,-11);cx.quadraticCurveTo(i+3+o,-4,i+o,-1);cx.stroke()}
+// 머리·눈
+cx.fillStyle='#bba27c';cx.beginPath();cx.ellipse(-30,0,9,9,0,0,7);cx.fill();
+cx.fillStyle='#f5ecd8';cx.beginPath();cx.ellipse(-31,-3,4.6,3.6,0,0,7);cx.fill();
+cx.strokeStyle='#1b1410';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(-34,-4);cx.quadraticCurveTo(-32.5,-1.5,-31,-4);cx.quadraticCurveTo(-29.5,-1.5,-28,-4);cx.stroke();
+// 다리
+cx.strokeStyle='#c4ab84';cx.lineCap='round';
+for(let i=0;i<8;i++){const off=(i-3.5)*1.7;cx.lineWidth=3-i*.15;cx.beginPath();cx.moveTo(-37,off);cx.quadraticCurveTo(-48,off*1.5+Math.sin(T*4+i)*2,-56-(grab?4:0),off*1.2+Math.sin(T*3+i)*3);cx.stroke()}
+if(grab){cx.strokeStyle='#d8c19b';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(-40,0);cx.lineTo(-70,-2);cx.moveTo(-40,1);cx.lineTo(-70,3);cx.stroke()}
+cx.restore()}
+function drawRod(){
+const s=G.state;
+let load=0;if(s==='bite')load=st.load*.55;else if(s==='reel')load=clamp(st.ten/100,0,1)*.9;else if(['net','lift'].includes(s))load=.6;else if(s==='fish'){const gap=bottomAt(G.drift)-rig.rigD;load=gap>-.25?.12:0}
+const bx=W*1.02,by=H*1.04;const tx=W*(.62+.3*tip.x),ty=H*(.08+.6*tip.y)+load*H*.16;
+const cpx=(bx+tx)/2-load*30,cpy=(by+ty)/2+load*H*.06;
+cx.lineCap='round';cx.strokeStyle='rgba(5,10,20,.7)';cx.lineWidth=12;cx.beginPath();cx.moveTo(bx,by);cx.quadraticCurveTo(cpx,cpy,tx,ty);cx.stroke();
+let rg=cx.createLinearGradient(bx,by,tx,ty);rg.addColorStop(0,'#1d2638');rg.addColorStop(.75,'#cfd9ea');rg.addColorStop(1,'#ff7a1a');
+cx.strokeStyle=rg;cx.lineWidth=5;cx.beginPath();cx.moveTo(bx,by);cx.quadraticCurveTo(cpx,cpy,tx,ty);cx.stroke();
+cx.fillStyle=tip.ok?'#b6ff3b':'#ff5a7e';cx.shadowColor=cx.fillStyle;cx.shadowBlur=16;cx.beginPath();cx.arc(tx,ty,5.5,0,7);cx.fill();cx.shadowBlur=0;
+}
+function drawMini(B){
+const w=MX();
+let g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#081a33');g.addColorStop(1,'#020611');cx.fillStyle=g;cx.fillRect(0,0,w,H);
+const sky=H*.17,dy=d=>sky+(d/112)*(H-sky-14);
+// 하늘 + 해
+let sg=cx.createLinearGradient(0,0,0,sky);sg.addColorStop(0,'#5fb3f0');sg.addColorStop(1,'#bfe6ff');cx.fillStyle=sg;cx.fillRect(0,0,w,sky);
+const p=clamp(G.clock/DAY,0,1),sx=w*(.1+.8*p),syy=sky*(.75-.55*Math.sin(p*Math.PI));cx.fillStyle='#fff6d2';cx.shadowColor='#ffe08a';cx.shadowBlur=18;cx.beginPath();cx.arc(sx,syy,7,0,7);cx.fill();cx.shadowBlur=0;
+cx.fillStyle='rgba(70,120,160,.6)';cx.beginPath();cx.moveTo(0,sky);for(let i=0;i<=20;i++)cx.lineTo(w*i/20,sky-Math.exp(-Math.pow((i-7)/4,2))*sky*.35-3);cx.lineTo(w,sky);cx.fill();
+// 바다
+let wg=cx.createLinearGradient(0,sky,0,H);wg.addColorStop(0,'#1d7fb8');wg.addColorStop(.35,'#0c3d6b');wg.addColorStop(1,'#04122a');cx.fillStyle=wg;cx.fillRect(0,sky,w,H-sky);
+// 수심 눈금
+cx.font='700 10px "Noto Sans KR"';cx.fillStyle='rgba(255,255,255,.45)';cx.strokeStyle='rgba(255,255,255,.12)';cx.lineWidth=1;
+for(let d=20;d<=100;d+=20){const y=dy(d);cx.beginPath();cx.moveTo(0,y);cx.lineTo(w,y);cx.stroke();cx.fillText(d+'m',5,y-3)}
+// 바닥 프로파일
+cx.fillStyle='#1a2433';cx.beginPath();cx.moveTo(0,H);for(let i=0;i<=30;i++){const x=w*i/30;cx.lineTo(x,dy(bottomAt(G.drift+(i-15)*3)))}cx.lineTo(w,H);cx.fill();
+// 배 + 풍(물닻)
+const bx=w*.5,wy=sky;
+cx.fillStyle='#f2f5f8';cx.beginPath();cx.moveTo(bx-26,wy-2);cx.lineTo(bx+30,wy-2);cx.lineTo(bx+22,wy+7);cx.lineTo(bx-22,wy+7);cx.fill();
+cx.fillStyle='#d8e2ec';cx.fillRect(bx-10,wy-12,16,10);cx.fillStyle='#ff5a7e';cx.fillRect(bx-26,wy+2,52,2);
+// 바람 → 풍은 선수 쪽(바람 불어오는 쪽)으로
+const ax=bx+46,ay=wy+34;cx.strokeStyle='rgba(255,210,90,.9)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(bx+30,wy+2);cx.lineTo(ax,ay-10);cx.stroke();
+cx.fillStyle='rgba(255,210,90,.85)';cx.beginPath();cx.moveTo(ax-12,ay-10);cx.quadraticCurveTo(ax,ay-24+Math.sin(T*2)*2,ax+12,ay-10);cx.lineTo(ax,ay+4);cx.fill();
+cx.fillStyle='rgba(255,255,255,.75)';cx.font='900 10px "Noto Sans KR"';cx.fillText('풍',ax-5,ay+16);
+cx.fillStyle='rgba(255,255,255,.85)';cx.fillText('← 바람',w-46,14);cx.fillText('선진입 →',w-52,sky-6);
+// 채비 위치
+const s=G.state;let rd=null;if(s==='sink')rd=st.d;else if(['landed','fish','bite'].includes(s))rd=Math.min(rig.rigD,B);else if(s==='reel')rd=st.depth;else if(['surface','net','lift'].includes(s))rd=2;
+if(rd!==null){const lx=bx-6+(rig.cast>1?14:0),ly=dy(rd);cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1;cx.beginPath();cx.moveTo(bx-6,wy);cx.quadraticCurveTo(bx-10,(wy+ly)/2,lx,ly);cx.stroke();
+cx.fillStyle=s==='reel'?'#ffd25a':'#ff7a1a';cx.beginPath();cx.arc(lx,ly,s==='reel'?5:3.5,0,7);cx.fill();
+if(s==='reel'){cx.fillStyle='#fff';cx.font='900 11px "Noto Sans KR"';cx.fillText(st.depth.toFixed(0)+'m',lx+9,ly+4)}}
+cx.fillStyle='rgba(79,245,210,.15)';cx.fillRect(w-1,0,1,H);
+}
+/* ====== 루프 ====== */
+let last=performance.now();
+function loop(now){
+const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
+if(tip.mode==='cam'){track();preview(pipx,160,120);if($('ovCal').classList.contains('on')){preview(calx,320,240);const ok=target&&rawPos,b=$('bGo');b.disabled=!ok;b.style.opacity=ok?1:.4;if(target)$('calStatus').textContent=rawPos?'✅ 추적 중 — 대를 위아래로 흔들어 원이 따라오는지 확인':'⚠️ 색을 못 찾는 중 — 테이프가 보이게'}}
+if(tip.ok)hist.push({t:T,x:tip.x,y:tip.y});while(hist.length&&T-hist[0].t>1.6)hist.shift();
+if(G.run){update(dt);hud()}
+if(msgT>0){msgT-=dt;if(msgT<=0){$('big').classList.remove('on');$('sub').textContent=''}}
+render(dt);requestAnimationFrame(loop);
+}
+$('bCam').onclick=async()=>{audio();$('ovTitle').classList.remove('on');$('ovCal').classList.add('on');tip.mode='cam';if(!video){$('calStatus').textContent='카메라 여는 중…';if(await startCam())$('calStatus').textContent='아직 색을 고르지 않았어요'}};
+$('bTouch').onclick=()=>{audio();tip.mode='touch';tip.ok=true;startGame()};
+$('bGo').onclick=()=>{audio();startGame()};
+$('bBack').onclick=()=>{$('ovCal').classList.remove('on');$('ovTitle').classList.add('on')};
+$('bAgain').onclick=()=>{audio();startGame()};
+$('bHome').onclick=()=>{$('ovRes').classList.remove('on');$('ovTitle').classList.add('on');$('pip').style.display='none'};
+function makeShot(){
+const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d');
+let g=x.createLinearGradient(0,0,0,1350);g.addColorStop(0,'#0b3d6b');g.addColorStop(.55,'#061a36');g.addColorStop(1,'#02060f');x.fillStyle=g;x.fillRect(0,0,1080,1350);
+x.globalAlpha=.08;x.fillStyle='#d6f6ff';for(let i=0;i<5;i++){x.beginPath();x.moveTo(120+i*200,0);x.lineTo(180+i*200,0);x.lineTo(380+i*200,1350);x.lineTo(260+i*200,1350);x.fill()}x.globalAlpha=1;
+x.textAlign='center';x.fillStyle='#ffd25a';x.font='900 34px "Noto Sans KR"';x.fillText('제주 심해 100m · 오늘의 조과',540,150);
+x.fillStyle='#fff';x.font='160px "Black Han Sans","Noto Sans KR"';x.fillText('심해갑',540,330);
+x.fillStyle='#4ff5d2';x.font='200px "Black Han Sans","Noto Sans KR"';x.fillText(G.kgTotal.toFixed(2)+'kg',540,620);
+x.fillStyle='#ffb02e';x.beginPath();x.roundRect?x.roundRect(450,680,180,180,40):x.rect(450,680,180,180);x.fill();x.fillStyle='#2a1300';x.font='130px "Black Han Sans"';x.fillText(G.rank,540,820);
+x.fillStyle='#eaf6ff';x.font='700 40px "Noto Sans KR"';x.fillText(G.catches.length+'마리 · 최대 '+(G.catches.length?Math.max(...G.catches.map(c=>c.kg)).toFixed(2):'0')+'kg',540,950);
+x.fillStyle='rgba(255,255,255,.6)';x.font='700 30px "Noto Sans KR"';x.fillText('빈 낚싯대로 집에서 한 판 · HOME FISHING',540,1010);
+x.fillStyle='#e00';x.beginPath();x.roundRect?x.roundRect(240,1120,600,120,30):x.rect(240,1120,600,120);x.fill();
+x.fillStyle='#fff';x.font='900 48px "Noto Sans KR"';x.fillText('YouTube @카앤피싱',540,1198);
+$('shotImg').src=c.toDataURL('image/png');$('shotWrap').style.display='block';
+}
+$('bShot').onclick=makeShot;
+window.__G=G;window.__tip=tip;window.__rig=()=>rig;window.__st=()=>st;window.__B=()=>bottomAt(G.drift);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
