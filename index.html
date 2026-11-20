@@ -455,7 +455,7 @@ body:not(.ingame) #mute{left:auto!important;right:max(14px,env(safe-area-inset-r
   <div class="bSub">전설로만 전해지던 <b>대왕 입술무늬갑오징어</b>가<br>당신의 에기를 노린다</div>
   <div class="bRules">
     <div><i>🌀</i><span><b>릴을 감아</b> 해구에서 끌어올려라</span></div>
-    <div><i>💨</i><span><b>돌진</b>할 땐 릴 멈추고 대를 숙여 받아주기</span></div>
+    <div><i>💨</i><span><b>돌진</b>해도 릴은 멈추지 말고 같은 속도로 — 드랙이 받는다</span></div>
     <div><i>🦑</i><span><b>촉수 휘감기</b>엔 위로 휙휙휙 3번 챔질</span></div>
     <div><i>🌑</i><span><b>먹물 폭탄</b> 속에선 진동과 소리로 버텨라</span></div>
   </div>
@@ -1054,7 +1054,13 @@ function update(dt){
     if(st.slip>0)st.slip-=dt;
     const rate=(turns/Math.max(dt,1e-3)*gear+auto)*(inArc?1:.35)*(st.slip>0?.6:1);if(st.by&&R()<dt*3){S.click();hap('tick')}
     st.depth-=rate*dt;st.click+=turns;if(st.click>.17){st.click=0;S.click();CR.tk++;if(CR.tk%3===0)hap('out')}
-    if(st.jet>0&&!st.absorbed&&CR.spd>.3)st.ten+=CR.spd*34*dt;if(CR.spd>3.4)st.ten+=(CR.spd-3.4)*22*dt;
+    // 실전 릴링: 멈추지 말고 일정한 속도로 — 멈추면 미늘 없는 에기에서 빠진다
+    const PLO=.9,PHI=2.6,live=CR.used&&st.t>.4;
+    if(live){if(CR.spd<.45)st.stopT=(st.stopT||0)+dt;else st.stopT=Math.max(0,(st.stopT||0)-dt*3);
+      st.inB=(st.inB||0)+(CR.spd>=PLO&&CR.spd<=PHI?dt:0);st.tot=(st.tot||0)+dt;
+      const d=Math.abs(CR.spd-(st.lsp??CR.spd));st.lsp=CR.spd;st.jerk=lerp(st.jerk||0,d/Math.max(dt,1e-3),Math.min(1,dt*4))}
+    if(CR.spd>PHI)st.ten+=(CR.spd-PHI)*(st.jet>0?40:24)*dt;
+    if(live&&st.jerk>9)st.ten+=(st.jerk-9)*1.6*dt;
     st.jetT-=dt;
     MU.inten=1-clamp(st.depth/100,0,1);
     if(st.jetT<=0&&st.jet<=0){st.jet=st.kilo?.8:.6;st.jetT=(st.kilo?1.4:1.6)+R()*1.6;st.absorbed=false;st.jy=tip.y;S.jet();hap('jet')}
@@ -1064,11 +1070,12 @@ function update(dt){
     st.ten=clamp(st.ten,0,110);
     {const ex=dragSlip(dt);if(ex>0)st.depth+=(1.5+Math.min(ex,20)*.3)*dt}
     if(st.ten>86)st.tear+=dt*(st.grade==='다리걸림'?1.7:st.grade==='GOOD'?1.1:.8)*RD().tear;else st.tear=Math.max(0,st.tear-dt*.3);
-    st.slackT=st.ten<16?st.slackT+dt:0;
-    guide('reel',st.slip>0?'지이익— <span class="k">드랙이 풀리며</span> 버틴다 · 줄이 계속 나가면 <span class="k">＋</span>로 조이기':st.jet>0?'꾹꾹! <span class="k">릴 멈추고 대를 살짝 숙여</span> 받아주기':CR.used?'대 각도 유지하고 <span class="k">릴 감기</span> · 펌핑 금지':'🌀 오른쪽 <span class="k">릴 손잡이를 빙글빙글</span> 돌려 감으세요 <span style="opacity:.7">(PC: 마우스 휠·스페이스)</span>');
-    if(st.tear>1){G.stats.lost++;breakCombo();S.lose();hap('lose');big('다리만 올라왔다','#ff4d6d',G.drag>=4?'드랙이 너무 단단했다 — ‘－’로 풀어두면 안 찢어진다':'꾹꾹 당길 때 대로 받아줘야 안 찢어진다',2.2);setState('legs',{sq:st.sq,n:2+(R()*3|0)});break}
-    if(st.slackT>1.1){G.stats.lost++;breakCombo();S.lose();hap('lose');big('빠졌다…','#ff4d6d','에기엔 미늘이 없다 — 텐션이 풀리면 끝',1.7);setState('ready');break}
-    if(st.depth<=3){S.surface();setMusic('tense');setState('surface',{sq:st.sq,grade:st.grade})}
+    if(live&&st.stopT>.22&&st.jet<=0){st.ten+=(5-st.ten)*Math.min(1,dt*5);if(!st.stopW){st.stopW=1;hap('snag')}}else if((st.stopT||0)<.05)st.stopW=0;
+    st.slackT=st.ten<16?st.slackT+dt:Math.max(0,st.slackT-dt*2);
+    guide('reel',live&&st.stopT>.15?'⚠ 릴이 멈췄다 — <span class="k">계속 감아라!</span> 텐션이 풀리면 빠진다':live&&CR.spd>PHI?'너무 빠르다 — <span class="k">일정한 속도</span>로 · 몸통이 찢어진다':st.slip>0?'지이익— <span class="k">드랙이 풀리며</span> 버틴다 · 릴은 <span class="k">같은 속도 그대로</span>':st.jet>0?'꾹꾹! 릴은 <span class="k">멈추지 말고 그 속도 그대로</span> · 드랙이 줄을 내준다':CR.used?'<span class="k">쉬지 말고 일정한 속도</span>로 감기 · 대 각도 유지 · 펌핑 금지':'🌀 오른쪽 <span class="k">릴 손잡이를 빙글빙글</span> 돌려 감으세요 <span style="opacity:.7">(PC: 마우스 휠·스페이스)</span>');
+    if(st.tear>1){G.stats.lost++;breakCombo();S.lose();hap('lose');big('다리만 올라왔다','#ff4d6d',G.drag>=4?'드랙이 너무 단단했다 — ‘－’로 풀어두면 안 찢어진다':'너무 세게 감았다 — 꾹꾹 당길 땐 같은 속도로 감고 드랙이 받게 둬라',2.2);setState('legs',{sq:st.sq,n:2+(R()*3|0)});break}
+    if(st.slackT>1.1||(live&&st.stopT>1.25)){G.stats.lost++;breakCombo();S.lose();hap('lose');big('빠졌다…','#ff4d6d',st.stopT>.3?'릴을 멈췄다 — 미늘 없는 에기는 일정하게 계속 감아야 붙어 있다':'에기엔 미늘이 없다 — 텐션이 풀리면 끝',2);setState('ready');break}
+    if(st.depth<=3){if(st.sq&&st.tot)st.sq.pace=st.inB/st.tot;S.surface();setMusic('tense');setState('surface',{sq:st.sq,grade:st.grade})}
     break;}
   case 'legs':if(st.t>2.8)setState('ready');break;
   case 'surface':
@@ -1134,7 +1141,7 @@ function drawSplats(dt){for(let i=SPL.length-1;i>=0;i--){const p=SPL[i];p.t+=dt;
 function catchIt(){const q=st.sq;SPL.forEach(p=>p.life=Math.min(p.life,p.t+.6));G.inkPlan=null;
   if(q.type==='by'){const b=q.sp;G.score+=b.pts;G.by=(G.by||[]);G.by.push(b.k);S.land();hap('ok');setMusic('off');
     big(`${b.k}!`,b.pts>=1000?'#ffc94a':'#9fd0ff',`잡어 출현 · ${b.msg} · +${b.pts.toLocaleString()} pts`,2.8,true);setState('got',{sq:q});return}G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);
-  const gm=st.grade==='무뽑기'?1.6:st.grade==='PERFECT'?1.5:st.grade==='GOOD'?1.2:1,cm=1+.2*(G.combo-1),pts=Math.round((q.kg*1000*gm*cm+(q.kg>=1?500:0))*(VIEW==='pro'?1.2:1));G.score+=pts;
+  const gm=st.grade==='무뽑기'?1.6:st.grade==='PERFECT'?1.5:st.grade==='GOOD'?1.2:1,cm=1+.2*(G.combo-1),pm=q.pace>=.85?1.2:q.pace>=.65?1.1:1,pts=Math.round((q.kg*1000*gm*cm*pm+(q.kg>=1?500:0))*(VIEW==='pro'?1.2:1));if(pm>1)setTimeout(()=>big(pm>1.15?'일정 릴링 PERFECT':'일정 릴링 GOOD','#3fe6d4',`쉬지 않고 고르게 감았다 · 점수 ×${pm}`,1.4),q.kg>=1?3600:1500);G.score+=pts;
   G.catches.push({kg:q.kg,grade:st.grade,pts,kind:q.kind,col:G.egi});G.hitCol[G.egi]=(G.hitCol[G.egi]||0)+1;hap('land');
   if(!G.bossReady&&(q.kg>=3||G.catches.length>=10)){G.bossReady=true;setTimeout(()=>{S.alarm();hap('jet');big('??? 해구 아래서 뭔가 움직였다','#ff5a7a','히든 스테이지 해금 — 출조가 끝나면 심해의 왕이 나타난다',3,true)},q.kg>=1?5600:3400)}
   if(q.kg>=1){S.bigFan();setMusic('off');setState('gotBig',{sq:q,pts,combo:G.combo});const t=$('toast');setTimeout(()=>{t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),4800)},2600);return}
@@ -2071,7 +2078,7 @@ function bossUpdate(dt){const v=vy();if(st._fl>0)st._fl-=dt;
     else{st.qteT-=dt;if(st.qteT<=0&&st.jet<=0&&st.hp>6){st.qte=2.6;st.qn=0;st.qteT=12+R()*4;S.tent();hap('bite');big('촉수 휘감기!','#ffc94a','위로 휙! 휙! 휙! — 3번 챔질',1.2)}}
     // 돌진
     st.jetT-=dt;if(st.jetT<=0&&st.jet<=0&&st.qte<=0){st.jet=enr?1.05:.85;st.jetT=(enr?1.7:2.2)+R()*1.5;st.absorbed=false;st.jy=tip.y;st.bx=(R()<.5?-1:1);S.jet();hap('jet')}
-    if(st.jet>0){st.jet-=dt;if(tip.y-st.jy>.05)st.absorbed=true;st.ten+=(st.absorbed?-14:70)*dt;if(!st.absorbed&&CR.spd>.3)st.ten+=CR.spd*30*dt;st.hp+=3.2*dt}
+    if(st.jet>0){st.jet-=dt;if(tip.y-st.jy>.05)st.absorbed=true;st.ten+=(st.absorbed?-14:70)*dt;if(CR.spd>2.6)st.ten+=(CR.spd-2.6)*40*dt;st.hp+=3.2*dt}
     else{const tg=tip.y>.86?6:58;st.ten+=(tg-st.ten)*Math.min(1,dt*1.7);st.hp-=turns*2.4*(inArc?1:.35)*(st.slip>0?.35:1)}
     if(CR.spd>3.6)st.ten+=(CR.spd-3.6)*20*dt;
     // 먹물 폭탄
@@ -2083,7 +2090,7 @@ function bossUpdate(dt){const v=vy();if(st._fl>0)st._fl-=dt;
   if(st.ten>88)st.tear+=dt*.42;else st.tear=Math.max(0,st.tear-dt*.2);
   st.slackT=st.ten<14?st.slackT+dt:0;
   MU.inten=1-st.hp/100;
-  guide('reel',st.qte>0?`<span class="k">위로 휙!</span> 촉수 떨쳐내기 ${st.qn}/3`:st.jet>0?'돌진! <span class="k">릴 멈추고 대를 숙여</span> 받아주기':st.stun>0?'기절! <span class="k">지금 마구 감아라</span>':st.ink>0?'먹물 속 — <span class="k">진동이 오면 받아주기</span>':CR.used?'대 각도 유지하고 <span class="k">릴 감기</span>':'🌀 오른쪽 <span class="k">릴 손잡이를 돌려</span> 감으세요 (PC: 휠·스페이스)');
+  guide('reel',st.qte>0?`<span class="k">위로 휙!</span> 촉수 떨쳐내기 ${st.qn}/3`:st.jet>0?'돌진! 릴은 <span class="k">멈추지 말고 같은 속도</span> · 대를 살짝 숙여 드랙으로 받기':st.stun>0?'기절! <span class="k">지금 마구 감아라</span>':st.ink>0?'먹물 속 — <span class="k">진동이 와도 같은 속도로 계속 감기</span>':CR.used?'대 각도 유지하고 <span class="k">릴 감기</span>':'🌀 오른쪽 <span class="k">릴 손잡이를 돌려</span> 감으세요 (PC: 휠·스페이스)');
   if(st.hp<=0){bossEnd(true);return}
   if(st.tear>1){bossEnd(false,'원줄이 끊어졌다');return}
   if(st.slackT>1.6){bossEnd(false,'텐션이 풀려 빠졌다');return}
@@ -2151,7 +2158,10 @@ function drawCrank(){const k=crankGeo();if(!k.on)return;const {x,y,r}=k,a=CR.ang
   if(!CR.used){const p=(T*1.6)%1;cx.strokeStyle='rgba(63,230,212,'+(1-p)+')';cx.lineWidth=3;cx.beginPath();cx.arc(x,y,r*(1.05+p*.35),T*4,T*4+4.2);cx.stroke();
     const ta=T*4+4.2,ax=x+Math.cos(ta)*r*(1.05+p*.35),ay=y+Math.sin(ta)*r*(1.05+p*.35);cx.fillStyle='rgba(63,230,212,'+(1-p)+')';cx.beginPath();cx.arc(ax,ay,5,0,7);cx.fill()}
   cx.textAlign='center';cx.font='800 12px Pretendard,sans-serif';cx.fillStyle=jet?'#ff8aa0':'rgba(234,242,255,.9)';
-  cx.fillText(jet?'멈춰! 받아주기':CR.used?(CR.spd>.25?`릴링 ${(CR.spd*60|0)} rpm`:'릴 감기'):'돌려서 감기',x,y-r-12);
+  const stp=CR.used&&(st.stopT||0)>.15,fast=CR.spd>2.6;cx.fillStyle=stp?'#ff6b81':fast?'#ffb02e':CR.spd>=.9?'#3fe6d4':'rgba(234,242,255,.9)';
+  cx.fillText(stp?'멈추면 빠진다! 계속':fast?'너무 빠름':CR.used?`릴링 ${(CR.spd*60|0)} rpm`:'돌려서 감기',x,y-r-12);
+  {const bw=r*2.1,bx=x-bw/2,by=y+r+12,mx=3.4,f=v=>bx+clamp(v/mx,0,1)*bw;cx.fillStyle='rgba(2,8,18,.7)';cx.fillRect(bx,by,bw,7);cx.fillStyle='rgba(63,230,212,.35)';cx.fillRect(f(.9),by,f(2.6)-f(.9),7);
+   cx.fillStyle=stp?'#ff4d6d':fast?'#ffb02e':'#3fe6d4';cx.fillRect(f(CR.spd)-2,by-3,4,13);cx.font='700 10px Pretendard,sans-serif';cx.fillStyle='rgba(234,242,255,.7)';cx.fillText('일정 속도 구간',x,by+20)}
   cx.restore()}
 function drawTension(){
   const r=Math.min(78,W*.12),x=W/2,y=H-(PORT?200:92),a0=Math.PI*1.12,a1=Math.PI*1.88,t=clamp(st.ten/100,0,1),A=a=>a0+(a1-a0)*a;
